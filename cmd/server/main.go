@@ -3,11 +3,20 @@ package main
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/rahulsolanki0037/asynctask/internal/handler"
+	"github.com/rahulsolanki0037/asynctask/internal/repository"
 )
 
 func main() {
+	jobRepository := repository.NewJobRepository()
+	jobHandler := handler.NewJobHandler(jobRepository)
+
 	// Register the HTTP handler for the /health endpoint
 	http.HandleFunc("/health", healthHandler)
+	http.HandleFunc("/createJob", jobHandler.CreateJobHandler)
+	http.HandleFunc("/getJobs", jobHandler.GetAllJobs)
+	http.HandleFunc("/getJob/", jobHandler.GetByJobId)
 
 	// Start the HTTP Server on port 8080
 	fmt.Println("Server running on : 8080")
