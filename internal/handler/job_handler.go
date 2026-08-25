@@ -6,17 +6,17 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/rahulsolanki0037/asynctask/internal/model"
-	"github.com/rahulsolanki0037/asynctask/internal/repository"
+	"github.com/rahulsolanki0037/asynctask/internal/model"	
+	"github.com/rahulsolanki0037/asynctask/internal/service"
 )
 
 type JobHandler struct {
-	repository *repository.JobRepository
+	service *service.JobService
 }
 
-func NewJobHandler(repository *repository.JobRepository) *JobHandler {
+func NewJobHandler(service *service.JobService) *JobHandler {
 	return &JobHandler{
-		repository: repository,
+		service: service,
 	}
 }
 
@@ -35,13 +35,7 @@ func (h *JobHandler) CreateJobHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	job := model.Job{
-		Type: req.Type,
-		Payload: req.Payload,
-		Status: "Queued",
-	}
-
-	job = h.repository.CreateJob(job)
+	job := h.service.CreateJob(req)
 
 	// Tell the client that a new resource was successfully created.
 	w.Header().Set("Content-Type", "application/json")
@@ -57,7 +51,7 @@ func (h *JobHandler) GetAllJobs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jobs := h.repository.GetAll()
+	jobs := h.service.GetAllJobs()
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -83,7 +77,7 @@ func (h *JobHandler) GetByJobId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	job, exists := h.repository.GetByJobId(jobId)
+	job, exists := h.service.GetJobById(jobId)
 	if !exists {
 		http.Error(w, "Job not found", http.StatusNotFound)
 		return

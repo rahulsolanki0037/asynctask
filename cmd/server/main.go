@@ -6,11 +6,13 @@ import (
 
 	"github.com/rahulsolanki0037/asynctask/internal/handler"
 	"github.com/rahulsolanki0037/asynctask/internal/repository"
+	"github.com/rahulsolanki0037/asynctask/internal/service"
 )
 
 func main() {
 	jobRepository := repository.NewJobRepository()
-	jobHandler := handler.NewJobHandler(jobRepository)
+	jobService := service.NewJobService(jobRepository)
+	jobHandler := handler.NewJobHandler(jobService)
 
 	// Register the HTTP handler for the /health endpoint
 	http.HandleFunc("/health", healthHandler)
