@@ -1,20 +1,28 @@
 package repository
 
-import "github.com/rahulsolanki0037/asynctask/internal/model"
+import (
+	"sync"
+
+	"github.com/rahulsolanki0037/asynctask/internal/model"
+)
 
 type JobRepository struct {
-	jobs map[int]model.Job
+	mu     sync.Mutex
+	jobs   map[int]model.Job
 	nextID int
 }
 
 func NewJobRepository() *JobRepository {
 	return &JobRepository{
-		jobs: make(map[int]model.Job),
+		jobs:   make(map[int]model.Job),
 		nextID: 1,
 	}
 }
 
 func (r *JobRepository) CreateJob(job model.Job) model.Job {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	job.ID = r.nextID
 	r.nextID++
 
@@ -24,6 +32,9 @@ func (r *JobRepository) CreateJob(job model.Job) model.Job {
 }
 
 func (r *JobRepository) GetAll() []model.Job {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	jobs := make([]model.Job, 0, len(r.jobs))
 
 	for _, job := range r.jobs {
@@ -33,7 +44,10 @@ func (r *JobRepository) GetAll() []model.Job {
 	return jobs
 }
 
-func (r *JobRepository) GetJobById(jobId int) (model.Job,bool) {
+func (r *JobRepository) GetJobById(jobId int) (model.Job, bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	
 	job, exists := r.jobs[jobId]
 	return job, exists
 }

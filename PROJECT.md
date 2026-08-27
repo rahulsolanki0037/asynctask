@@ -137,3 +137,12 @@ Handler
 
 
 Flow: Handler --> Service --> Repository Interface (PostgreSQL / In Memory)
+
+## Step 8 - Concurrency-Safe Repository
+
+- Go maps are not safe for concurrent writes.
+- Multiple goroutines accessing the shared data can cause data race
+- sync.Mutex allows mutual exclusion
+- Lock() allows one goroutine to access the shared data at a time
+- Unlock() releases the lock
+- defer Unlock() ensures the lock is released when the function exists.
