@@ -168,3 +168,12 @@ We use a buffered channel because it acts as a queue that can temporarily hold m
 - `go worker.Start()` allows the worker to run concurrently with the actual server.
 
 Flow : Handler --> Service --> Queue --> Job --> Worker
+
+## Step 11 - Worker Pool
+
+- A worker pool consists of multiple workers processing on jobs from the same queue
+- Multiple jobs get processed concurrently
+- Each worker runs in its own goroutine
+- Worker count controls the maximum processing concurrency.
+- Worker pools provide controlled concurrency instead of creation one goroutine across a job.
+

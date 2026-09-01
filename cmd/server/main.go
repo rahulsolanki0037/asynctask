@@ -16,8 +16,14 @@ func main() {
 	jobQueue := queue.NewJobQueue(10)
 	jobService := service.NewJobService(jobRepository, *jobQueue)
 	jobHandler := handler.NewJobHandler(jobService)
-	jobWorker := worker.NewWorker(jobQueue)
-	go jobWorker.Start()
+
+	totalWorkers := 5
+
+	// Worker pool with multiple workers
+	for i := 0; i <= totalWorkers; i++ {
+		jobWorker := worker.NewWorker(i, jobQueue)
+		go jobWorker.Start()
+	}
 
 	// Register the HTTP handlers
 	http.HandleFunc("/health", healthHandler)

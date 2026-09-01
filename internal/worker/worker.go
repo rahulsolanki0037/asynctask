@@ -7,17 +7,19 @@ import (
 )
 
 type Worker struct {
+	id int
 	queue *queue.JobQueue
 }
 
-func NewWorker (queue *queue.JobQueue) *Worker {
+func NewWorker (id int, queue *queue.JobQueue) *Worker {
 	return &Worker{
+		id: id,
 		queue: queue,
 	}
 }
 
 func (w *Worker) Start() {
 	for job := range w.queue.Jobs() {
-		fmt.Printf("Processing Job for %d\n", job.ID)
+		fmt.Printf("Worker %d processing Job for %d\n", w.id, job.ID)
 	}
 }
