@@ -51,3 +51,19 @@ func (r *JobRepository) GetJobById(jobId int) (model.Job, bool) {
 	job, exists := r.jobs[jobId]
 	return job, exists
 }
+
+func (r *JobRepository) UpdateStatus(jobId int, status string) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	job, exists := r.jobs[jobId]
+	if !exists {
+		return false
+	}
+
+	job.Status = status
+
+	r.jobs[jobId] = job
+
+	return true
+}
