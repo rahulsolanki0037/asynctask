@@ -13,13 +13,13 @@ type JobRepository interface {
 
 type JobService struct {
 	repository JobRepository
-	queue queue.JobQueue
+	queue      queue.JobQueue
 }
 
 func NewJobService(repository JobRepository, queue queue.JobQueue) *JobService {
 	return &JobService{
 		repository: repository,
-		queue: queue,
+		queue:      queue,
 	}
 }
 

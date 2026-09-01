@@ -158,3 +158,13 @@ Flow: Handler --> Service --> Repository Interface (PostgreSQL / In Memory)
 We expose a receive-only channel because Workers only need to take jobs from the queue, one by one, and process them. Workers don't need to send jobs back into the queue.
 
 We use a buffered channel because it acts as a queue that can temporarily hold multiple jobs while workers are busy.
+
+## Step 10 - Worker
+
+- Worker consumes job from the queue
+- `for job := range channel` receives job one by one
+- Worker waits when the channel has no jobs
+- This workers runs on its own goroutine.
+- `go worker.Start()` allows the worker to run concurrently with the actual server.
+
+Flow : Handler --> Service --> Queue --> Job --> Worker
