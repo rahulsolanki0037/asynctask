@@ -145,4 +145,16 @@ Flow: Handler --> Service --> Repository Interface (PostgreSQL / In Memory)
 - sync.Mutex allows mutual exclusion
 - Lock() allows one goroutine to access the shared data at a time
 - Unlock() releases the lock
-- defer Unlock() ensures the lock is released when the function exists.
+- defer Unlock() ensures the lock is released when the function exits.
+
+## Step 9 - Job Queue
+
+- A channel can be used as a queue between goroutines
+- make (chan model.Job, size) creates a buffered channel
+- chan <- model.Job sends the required job in the channel
+- <- chan model.Job exposes it as a receiver type channel
+- Service stores the job & puts it in the Queue.
+
+We expose a receive-only channel because Workers only need to take jobs from the queue, one by one, and process them. Workers don't need to send jobs back into the queue.
+
+We use a buffered channel because it acts as a queue that can temporarily hold multiple jobs while workers are busy.
