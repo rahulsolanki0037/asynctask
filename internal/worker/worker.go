@@ -1,9 +1,11 @@
 package worker
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
+	"github.com/rahulsolanki0037/asynctask/internal/model"
 	"github.com/rahulsolanki0037/asynctask/internal/queue"
 	"github.com/rahulsolanki0037/asynctask/internal/service"
 )
@@ -22,13 +24,27 @@ func NewWorker(id int, queue *queue.JobQueue, service *service.JobService) *Work
 	}
 }
 
+func (w *Worker) ProcessJob(job model.Job) error {
+	fmt.Printf("Worker %d processing Job for %d\n", w.id, job.ID)
+
+	time.Sleep(3 * time.Second)
+
+	if job.Type == "FAIL" {
+		return errors.New("Job Processing failed")
+	}
+
+	return nil
+}
+
 func (w *Worker) Start() {
 	for job := range w.queue.Jobs() {
-		fmt.Printf("Worker %d processing Job for %d\n", w.id, job.ID)
-
 		w.service.UpdateStatus(job.ID, "PROCESSING")
 
-		time.Sleep(3 * time.Second)
+		err := w.ProcessJob(job)
+		if err != nil {
+			w.service.UpdateStatus(job.ID, "FAILED")
+			continue
+		}
 
 		w.service.UpdateStatus(job.ID, "COMPLETED")
 	}
