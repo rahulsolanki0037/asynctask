@@ -10,6 +10,7 @@ type JobRepository interface {
 	GetAll() []model.Job
 	GetJobById(id int) (model.Job, bool)
 	UpdateStatus(id int, status string) bool
+	RetryJob(id int) (model.Job, bool)
 }
 
 type JobService struct {
@@ -48,4 +49,8 @@ func (s *JobService) GetJobById(id int) (model.Job, bool) {
 
 func (s *JobService) UpdateStatus(id int, status string) bool {
 	return s.repository.UpdateStatus(id, status)
+}
+
+func (s *JobService) RetryJob(id int) (model.Job, bool) {
+	return s.repository.RetryJob(id)
 }

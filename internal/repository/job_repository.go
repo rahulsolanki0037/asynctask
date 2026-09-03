@@ -67,3 +67,20 @@ func (r *JobRepository) UpdateStatus(jobId int, status string) bool {
 
 	return true
 }
+
+func (r *JobRepository) RetryJob(jobId int) (model.Job, bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	job, exists := r.jobs[jobId]
+	if !exists {
+		return model.Job{}, false
+	}
+
+	job.RetryCount++
+	job.Status = "QUEUED"
+
+	r.jobs[jobId] = job
+
+	return job, true
+}

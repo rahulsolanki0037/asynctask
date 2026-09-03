@@ -10,6 +10,8 @@ import (
 	"github.com/rahulsolanki0037/asynctask/internal/service"
 )
 
+const retries = 3
+
 type Worker struct {
 	id      int
 	queue   *queue.JobQueue
@@ -43,6 +45,14 @@ func (w *Worker) Start() {
 		err := w.ProcessJob(job)
 		if err != nil {
 			w.service.UpdateStatus(job.ID, "FAILED")
+			
+			if job.RetryCount < retries {
+				retryJob, ok := w.service.RetryJob(job.ID)
+				if ok {
+					w.queue.Enqueue(retryJob)
+				}
+			}
+			
 			continue
 		}
 
