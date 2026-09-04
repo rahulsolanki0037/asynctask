@@ -207,4 +207,26 @@ Flow:
     ↓             ↓
 COMPLETED       FAILED
     
-                
+## Step 14: Retry Failed Jobs
+
+- If a job is failed, retry mechanism should handle it instead of keeping the status as `FAILED`
+- Retry Count should be tracked for the particular job to check how many times it has been retried
+- Max Retires Count decide how many times the retry mechanism should work instead of infinite tries
+- When the retry mechanism gets executed the status gets changed to QUEUED & the job is passed to the Queue
+- if the retry mechanism reached the max retries count then status gets set to FAILED.
+
+Flow: 
+
+      PROCESSING
+           ↓
+         FAILED
+           ↓
+RetryCount < MaxRetries?
+        /       \
+      YES       NO
+       ↓         ↓
+     QUEUED    FAILED
+       ↓
+     Queue
+       ↓
+     Worker
