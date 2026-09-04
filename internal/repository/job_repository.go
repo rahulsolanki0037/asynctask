@@ -33,7 +33,7 @@ func (r *JobRepository) GetAll() []model.Job {
 	return jobs
 }
 
-func (r *JobRepository) GetByJobId(jobId int) (model.Job,bool) {
+func (r *JobRepository) GetJobById(jobId int) (model.Job,bool) {
 	job, exists := r.jobs[jobId]
 	return job, exists
 }

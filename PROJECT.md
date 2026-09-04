@@ -127,3 +127,13 @@ Service
     ↓
 Handler
 
+## Step 7 - Interfaces
+
+- Interfaces define a set of required methods
+- Go interfaces are satisfied implicitly.
+- A type satisfies an interface when the required methods are implemented.
+- Service depends on repository interface instead of a concrete repository.
+- Loose coupling, easier testing, easy to replace implementations.
+
+
+Flow: Handler --> Service --> Repository Interface (PostgreSQL / In Memory)
