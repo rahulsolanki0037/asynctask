@@ -190,3 +190,21 @@ UpdateStatus() updated the status for the job & repository access is protected u
 If we try to call GetById(jobId) in UpdateStatus(), updateStatus looks first & then call GetById() which locks again and it goes it waiting state forever because Go's `sync.Mutex` is not reentrant. The same goroutine cannot lock the same mutex twice without unlocking it first.
  
 Note: `Don't call another repository method that acquires the same mutex while you are already holding that mutex`.
+
+## Step 13 - Job Failure Handling
+
+- `processJob()` handles the error if the processing fails.
+- If it returns nil, then processing is successful.
+- A failed job is marked as FAILED
+- If a job is failed, we continue the process for next job instead of stopping with help of `continue`
+
+Flow: 
+        QUEUED
+           ↓
+        PROCESSING
+           ↓
+    ┌─────────────┐
+    ↓             ↓
+COMPLETED       FAILED
+    
+                
