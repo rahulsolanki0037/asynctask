@@ -177,3 +177,16 @@ Flow : Handler --> Service --> Queue --> Job --> Worker
 - Worker count controls the maximum processing concurrency.
 - Worker pools provide controlled concurrency instead of creation one goroutine across a job.
 
+## Step 12 - Job Status Lifecycle
+
+Lifecycle : QUEUED --> PROCESSING --> COMPLETED
+
+- QUEUED --> When you create a Job
+- PROCESSING --> Worker has picked the job
+- COMPLETED --> Worker has processed the job
+
+UpdateStatus() updated the status for the job & repository access is protected using mutex.
+
+If we try to call GetById(jobId) in UpdateStatus(), updateStatus looks first & then call GetById() which locks again and it goes it waiting state forever because Go's `sync.Mutex` is not reentrant. The same goroutine cannot lock the same mutex twice without unlocking it first.
+ 
+Note: `Don't call another repository method that acquires the same mutex while you are already holding that mutex`.

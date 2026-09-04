@@ -21,7 +21,7 @@ func main() {
 
 	// Worker pool with multiple workers
 	for i := 0; i <= totalWorkers; i++ {
-		jobWorker := worker.NewWorker(i, jobQueue)
+		jobWorker := worker.NewWorker(i, jobQueue, jobService)
 		go jobWorker.Start()
 	}
 

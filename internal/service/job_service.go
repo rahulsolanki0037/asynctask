@@ -9,6 +9,7 @@ type JobRepository interface {
 	CreateJob(req model.Job) model.Job
 	GetAll() []model.Job
 	GetJobById(id int) (model.Job, bool)
+	UpdateStatus(id int, status string) bool
 }
 
 type JobService struct {
@@ -43,4 +44,8 @@ func (s *JobService) GetAllJobs() []model.Job {
 
 func (s *JobService) GetJobById(id int) (model.Job, bool) {
 	return s.repository.GetJobById(id)
+}
+
+func (s *JobService) UpdateStatus(id int, status string) bool {
+	return s.repository.UpdateStatus(id, status)
 }
