@@ -8,6 +8,7 @@ import (
 	"github.com/rahulsolanki0037/asynctask/internal/queue"
 	"github.com/rahulsolanki0037/asynctask/internal/repository"
 	"github.com/rahulsolanki0037/asynctask/internal/service"
+	"github.com/rahulsolanki0037/asynctask/internal/worker"
 )
 
 func main() {
@@ -15,6 +16,14 @@ func main() {
 	jobQueue := queue.NewJobQueue(10)
 	jobService := service.NewJobService(jobRepository, *jobQueue)
 	jobHandler := handler.NewJobHandler(jobService)
+
+	totalWorkers := 5
+
+	// Worker pool with multiple workers
+	for i := 0; i <= totalWorkers; i++ {
+		jobWorker := worker.NewWorker(i, jobQueue)
+		go jobWorker.Start()
+	}
 
 	// Register the HTTP handlers
 	http.HandleFunc("/health", healthHandler)
@@ -24,7 +33,10 @@ func main() {
 
 	// Start the HTTP Server on port 8080
 	fmt.Println("Server running on : 8080")
-	http.ListenAndServe(":8080", nil)
+	err := http.ListenAndServe(":8080", nil)
+	if err != nil {
+		fmt.Println("Server stopped: ", err)
+	}
 }
 
 // healthHander handles request made to /health endpoint
