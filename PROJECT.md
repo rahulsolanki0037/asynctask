@@ -230,3 +230,83 @@ RetryCount < MaxRetries?
      Queue
        ↓
      Worker
+
+## Step 15: Graceful Shutdown
+
+- Graceful shutdown allows the application to stop cleanly instead of abruptly terminating running goroutines and services.
+- OS sends termination signals to the application when the process needs to stop.
+- `os` → provides functionality for interacting with the operating system
+- `syscall` → provides access to low-level operating-system functionality.
+- `os.Interrupt` → interrupt signal commonly generated when pressing Ctrl+C.
+- `syscall.SIGTERM` → Signal Terminate; commonly sent by the OS, Docker, Kubernetes, or process managers to request application termination.
+- `os/signal` package allows the Go application to listen for OS signals.
+- `signalChan := make(chan os.Signal, 1)` creates a buffered channel used to receive OS signals. The 1 means the channel can temporarily hold one signal without requiring an immediate receiver.
+- `signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)` tells Go to send the specified OS signals to signalChan.
+- `<-signalChan` receives the signal from the channel and blocks the main goroutine until a signal is received.
+- Receiving a value from a channel does not mean that the channel should be closed. A channel is generally closed by the sender when no more values will be sent.
+
+# Context Cancellation
+- `context.WithCancel()` creates a cancellable context and returns a cancel() function.
+- The context is passed to workers so that cancellation can be propagated to them.
+- cancel() triggers the context's Done() channel.
+- Workers listen for cancellation using `case <-ctx.Done():`.
+- When cancellation occurs, workers return and exit their goroutines.
+- `defer cancel()` ensures that the context is cancelled when the function exits.
+
+Example:
+
+ctx, cancel := context.WithCancel(context.Background())
+defer cancel()
+
+Worker:
+
+case <-ctx.Done():
+    return
+
+# HTTP Server Shutdown
+- `http.ListenAndServe()` is blocking, so if it runs directly in main, main cannot continue to wait for the shutdown signal.
+- The HTTP server is therefore started in a goroutine.
+- Using http.Server allows the application to explicitly shut down the HTTP server.
+
+Example:
+
+server := &http.Server{Addr: ":8080"}
+go server.ListenAndServe()
+
+- `server.Shutdown()` gracefully stops the HTTP server.
+- Graceful shutdown allows existing HTTP requests to finish while preventing new requests from being accepted.
+
+# Shutdown Flow
+Application Starts
+       ↓
+Create Context
+       ↓
+Create Signal Channel
+       ↓
+Register OS Signals
+       ↓
+Start Workers
+       ↓
+Start HTTP Server
+       ↓
+Application Running
+       ↓
+Ctrl+C / SIGTERM
+       ↓
+OS sends Signal
+       ↓
+signalChan receives Signal
+       ↓
+<-signalChan continues execution
+       ↓
+cancel()
+       ↓
+ctx.Done() triggered
+       ↓
+Workers Exit
+       ↓
+server.Shutdown()
+       ↓
+HTTP Server Stops
+       ↓
+Application Exits Cleanly

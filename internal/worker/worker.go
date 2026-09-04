@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -38,24 +39,35 @@ func (w *Worker) ProcessJob(job model.Job) error {
 	return nil
 }
 
-func (w *Worker) Start() {
-	for job := range w.queue.Jobs() {
-		w.service.UpdateStatus(job.ID, "PROCESSING")
-
-		err := w.ProcessJob(job)
-		if err != nil {
-			w.service.UpdateStatus(job.ID, "FAILED")
-			
-			if job.RetryCount < retries {
-				retryJob, ok := w.service.RetryJob(job.ID)
-				if ok {
-					w.queue.Enqueue(retryJob)
-				}
+func (w *Worker) Start(ctx context.Context) {
+	for {
+		select {
+		case job, ok := <-w.queue.Jobs():
+			if !ok {
+				return
 			}
-			
-			continue
+
+			w.service.UpdateStatus(job.ID, "PROCESSING")
+
+			err := w.ProcessJob(job)
+			if err != nil {
+				w.service.UpdateStatus(job.ID, "FAILED")
+
+				if job.RetryCount < retries {
+					retryJob, ok := w.service.RetryJob(job.ID)
+					if ok {
+						w.queue.Enqueue(retryJob)
+					}
+				}
+
+				continue
+			}
+
+			w.service.UpdateStatus(job.ID, "COMPLETED")
+
+		case <- ctx.Done():
+			return
 		}
 
-		w.service.UpdateStatus(job.ID, "COMPLETED")
 	}
 }

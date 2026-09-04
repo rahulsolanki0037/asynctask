@@ -1,8 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/rahulsolanki0037/asynctask/internal/handler"
 	"github.com/rahulsolanki0037/asynctask/internal/queue"
@@ -16,13 +20,18 @@ func main() {
 	jobQueue := queue.NewJobQueue(10)
 	jobService := service.NewJobService(jobRepository, *jobQueue)
 	jobHandler := handler.NewJobHandler(jobService)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM) // SIGTERM - Signal Terminate
 
 	totalWorkers := 5
 
 	// Worker pool with multiple workers
-	for i := 0; i <= totalWorkers; i++ {
+	for i := 0; i < totalWorkers; i++ {
 		jobWorker := worker.NewWorker(i, jobQueue, jobService)
-		go jobWorker.Start()
+		go jobWorker.Start(ctx)
 	}
 
 	// Register the HTTP handlers
@@ -31,11 +40,27 @@ func main() {
 	http.HandleFunc("/getJobs", jobHandler.GetAllJobs)
 	http.HandleFunc("/getJob/", jobHandler.GetByJobId)
 
-	// Start the HTTP Server on port 8080
-	fmt.Println("Server running on : 8080")
-	err := http.ListenAndServe(":8080", nil)
+	// Create the HTTP Server
+	server := http.Server{Addr: ":8080"}
+
+	// Start the HTTP Server
+	go func() {
+		fmt.Println("Server running on : 8080")
+		err := server.ListenAndServe()
+		if err != nil && err != http.ErrServerClosed {
+			fmt.Println("Server error: ", err)
+		}
+	}()
+
+	<-signalChan
+
+	fmt.Println("Server shutdown signal received")
+
+	cancel()
+
+	err := server.Shutdown(context.Background())
 	if err != nil {
-		fmt.Println("Server stopped: ", err)
+		fmt.Println("Server shutdown error: ", err)
 	}
 }
 
