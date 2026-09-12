@@ -13,6 +13,7 @@ type JobRepository interface {
 	GetJobById(ctx context.Context, id int) (model.Job, error)
 	UpdateStatus(ctx context.Context, id int, status string) (bool, error)
 	RetryJob(ctx context.Context, id int) (model.Job, error)
+	RecoverProcessingJobs(ctx context.Context) ([]model.Job, error)
 }
 
 type JobService struct {
@@ -79,4 +80,13 @@ func (s *JobService) RetryJob(ctx context.Context, id int) (model.Job, error) {
 
 	return job, nil
 
+}
+
+func (s *JobService) RecoverProcessingJobs(ctx context.Context) ([]model.Job, error) {
+	jobs, err := s.repository.RecoverProcessingJobs(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return jobs, nil
 }

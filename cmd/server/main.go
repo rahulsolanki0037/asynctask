@@ -50,6 +50,15 @@ func main() {
 		go jobWorker.Start(ctx)
 	}
 
+	recoveredJobs, err := jobService.RecoverProcessingJobs(ctx)
+	if err != nil {
+		log.Fatal("Failed to recover processing jobs: ", err)
+	}
+
+	for _, job := range recoveredJobs {
+		jobQueue.Enqueue(job)
+	}
+
 	// Register the HTTP handlers
 	http.HandleFunc("/health", healthHandler)
 	http.HandleFunc("/createJob", jobHandler.CreateJobHandler)
