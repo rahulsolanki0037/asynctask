@@ -105,3 +105,37 @@ func(r *PostgresJobRepository) RetryJob(ctx context.Context, jobId int) (model.J
 
 	return job, nil
 }
+
+func (r *PostgresJobRepository) RecoverProcessingJobs(ctx context.Context) ([]model.Job, error) {
+	query := `UPDATE jobs
+				SET status = 'QUEUED', updated_at = NOW()
+				WHERE status = 'PROCESSING'
+				RETURNING id, type, payload, status, retry_count`
+
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	jobs := []model.Job{}
+
+	for rows.Next() {
+		var job model.Job
+
+		err := rows.Scan(&job.ID, &job.Type, &job.Payload, &job.Status, &job.RetryCount)
+		if err != nil {
+			return nil, err
+		}
+
+		jobs = append(jobs, job)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+
+	return jobs, nil
+}

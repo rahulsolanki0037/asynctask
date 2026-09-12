@@ -408,3 +408,32 @@ PostgreSQL is the persistent source of truth for jobs.
 The in-memory queue is responsible only for delivering jobs to workers.
 
 Jobs that already exist in PostgreSQL are not automatically placed back into the in-memory queue when the application starts. A future startup/recovery mechanism may be required to load pending `QUEUED` jobs from PostgreSQL into the queue.
+
+## 17. Job Recovery After Application Restart
+
+- Added `RecoverProcessingJobs()` to the `JobRepository` interface and implemented it in `PostgresJobRepository`.
+- Added PostgreSQL recovery logic to change jobs from `PROCESSING` to `QUEUED` and return the recovered jobs.
+- Updated `updated_at` during recovery.
+- Added `RecoverProcessingJobs()` to `JobService`.
+- Added startup recovery to identify `PROCESSING` jobs after application restart.
+- Started workers before enqueueing recovered jobs so recovered jobs can be consumed immediately.
+- Enqueued recovered jobs into the in-memory queue for normal worker processing.
+- Tested recovery with a job in `PROCESSING` state and verified that it was recovered, processed by a worker, and reached `COMPLETED`.
+- Recovery currently handles only `PROCESSING` jobs. Existing `QUEUED` jobs are not recovered by this method.
+
+### Recovery Flow
+PROCESSING
+    ↓
+Application Restart
+    ↓
+RecoverProcessingJobs()
+    ↓
+QUEUED
+    ↓
+In-Memory Queue
+    ↓
+Worker
+    ↓
+PROCESSING
+    ↓
+COMPLETED
