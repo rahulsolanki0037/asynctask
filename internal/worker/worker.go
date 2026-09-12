@@ -47,25 +47,38 @@ func (w *Worker) Start(ctx context.Context) {
 				return
 			}
 
-			w.service.UpdateStatus(job.ID, "PROCESSING")
-
-			err := w.ProcessJob(job)
+			_, err := w.service.UpdateStatus(ctx, job.ID, "PROCESSING")
 			if err != nil {
-				w.service.UpdateStatus(job.ID, "FAILED")
+				fmt.Println("Failed to update job status: ", err)
+				continue
+			}
 
-				if job.RetryCount < retries {
-					retryJob, ok := w.service.RetryJob(job.ID)
-					if ok {
-						w.queue.Enqueue(retryJob)
+			err = w.ProcessJob(job)
+			if err != nil {
+				_, err = w.service.UpdateStatus(ctx, job.ID, "FAILED")
+				if err != nil {
+					fmt.Println("Failed to update job status: ", err)
+				}
+
+				if job.RetryCount <= retries {
+					retryJob, err := w.service.RetryJob(ctx, job.ID)
+					if err != nil {
+						fmt.Println("Retry job failed: ", err)
+						continue
 					}
+
+					w.queue.Enqueue(retryJob)
 				}
 
 				continue
 			}
 
-			w.service.UpdateStatus(job.ID, "COMPLETED")
+			_, err = w.service.UpdateStatus(ctx, job.ID, "COMPLETED")
+			if err != nil {
+				fmt.Println("Failed to update job status: ", err)
+			}
 
-		case <- ctx.Done():
+		case <-ctx.Done():
 			return
 		}
 
