@@ -16,6 +16,6 @@ func (q *JobQueue) Enqueue(job model.Job) {
 	q.jobs <- job
 }
 
-func (q *JobQueue) Jobs() <- chan model.Job {
+func (q *JobQueue) Jobs() <-chan model.Job {
 	return q.jobs
-} 
+}

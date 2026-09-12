@@ -3,11 +3,15 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/joho/godotenv"
+	"github.com/rahulsolanki0037/asynctask/config"
+	"github.com/rahulsolanki0037/asynctask/database"
 	"github.com/rahulsolanki0037/asynctask/internal/handler"
 	"github.com/rahulsolanki0037/asynctask/internal/queue"
 	"github.com/rahulsolanki0037/asynctask/internal/repository"
@@ -16,12 +20,24 @@ import (
 )
 
 func main() {
-	jobRepository := repository.NewJobRepository()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error while loading .env file: ", err)
+	}
+
+	dbPool, err := database.Connect(ctx, config.LoadDBConfig().DBUrl())
+	if err != nil {
+		log.Fatal("Database connection error:", err)
+	}
+	defer dbPool.Close()
+
+	jobRepository := repository.NewPostgresJobRepository(dbPool)
 	jobQueue := queue.NewJobQueue(10)
 	jobService := service.NewJobService(jobRepository, *jobQueue)
 	jobHandler := handler.NewJobHandler(jobService)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM) // SIGTERM - Signal Terminate
@@ -58,7 +74,7 @@ func main() {
 
 	cancel()
 
-	err := server.Shutdown(context.Background())
+	err = server.Shutdown(context.Background())
 	if err != nil {
 		fmt.Println("Server shutdown error: ", err)
 	}
